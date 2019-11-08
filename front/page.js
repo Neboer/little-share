@@ -103,7 +103,9 @@ window.onload = function () {
     let upload_file_list = document.getElementById("up_input");
     let submit_button = document.getElementById("sm_button");
     submit_button.onclick = function () {
-        upload_files_to_server(upload_file_list[0]);// TODO: 仅上传第一个文件
+        let formData = new FormData();
+        formData.append("file", upload_file_list.files[0]);
+        upload_files_to_server(formData);// TODO: 仅上传第一个文件
     };
     upload_file_list.onchange = check_upload_files;
 };
