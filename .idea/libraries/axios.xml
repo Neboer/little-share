@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="axios" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/library/axios.d.ts" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/front/development_library/axios.d.ts" />
+    </CLASSES>
+    <SOURCES />
+  </library>
+</component>

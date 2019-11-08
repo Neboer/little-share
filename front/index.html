@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>文件共享平台</title>
+    <script src="library/axios.min.js"></script>
+    <script src="transmit.js"></script>
+    <script src="page.js"></script>
+    <script src="getFileList.js"></script>
+</head>
+<body>
+    <div>
+        当前文件列表
+        <a>刷新</a>
+        <table id="files_list_table">
+            <tr>
+                <td>文件名</td>
+                <td>文件大小</td>
+                <td>剩余时长</td>
+            </tr>
+        </table>
+    </div>
+
+    <input type="file" id="up_input" multiple/>
+    <button type="submit" id="sm_button">提交</button>
+    <div>
+    已经选择的文件：
+    <table id="files_table">
+        <tr>
+            <td>文件名</td>
+            <td>文件大小</td>
+            <td>保存时长</td>
+        </tr>
+    </table>
+    </div>
+</body>
+</html>
