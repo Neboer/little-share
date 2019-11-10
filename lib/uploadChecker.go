@@ -24,13 +24,17 @@ func calculateKeepTime(fileSize int64) time.Duration {
 	if fileSize > freeSpace {
 
 	}
+	return time.Hour
 }
 
 // gin mid-ware for checking upload files and
-func CheckUpload(c *gin.Context) gin.HandlerFunc {
-	return func(context *gin.Context) {
-		if c.Request.URL.Path == "/upload" {
+
+func CheckUpload() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.URL.Path == "/upload" && c.Request.Method == "post" {
 			fmt.Println("good")
+		} else {
+			//fmt.Println(c.Request.URL.Path)
 		}
 	}
 }

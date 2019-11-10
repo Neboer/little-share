@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./lib"
+	"github.com/Neboer/little-share/lib"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -11,6 +11,7 @@ import (
 func main() {
 	r := gin.Default()
 	r.Use(static.Serve("/", static.LocalFile("front", true)))
+	r.Use(lib.CheckUpload())
 	r.GET("/files", func(c *gin.Context) {
 		f, _ := os.Open("files")
 		i, _ := f.Readdir(-1)
@@ -25,5 +26,5 @@ func main() {
 		log.Println(fileForm.Filename)
 	})
 	// Listen and Server in 0.0.0.0:8080
-	_ = r.Run(":8080")
+	_ = r.Run(":8081")
 }

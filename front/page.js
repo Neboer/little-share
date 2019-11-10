@@ -62,23 +62,33 @@ function clear_table(table_item) {
     }
 }
 
-function create_table_line(file_metadata) {
+function create_table_line(file_metadata, file_size_bytes) {
     let line = document.createElement("tr");
+    let child_table_row_element;
     for (let i in file_metadata) {
         if (file_metadata.hasOwnProperty(i)) {
-            _ = document.createElement("td");
-            _.innerText = file_metadata[i];
-            line.appendChild(_);
+            child_table_row_element = document.createElement("td");
+            child_table_row_element.innerText = file_metadata[i];
+            line.appendChild(child_table_row_element);
         }
     }
-    return line;
+    let progress_obj = document.createElement("progress");
+    progress_obj.max = file_size_bytes;
+    progress_obj.className = "bar";
+    let tr_container_hold_progress_obj = document.createElement("td");
+    tr_container_hold_progress_obj.className = "lint";
+    tr_container_hold_progress_obj.insertBefore(progress_obj, null);
+    let progress_text = document.createTextNode("Waiting...");
+    tr_container_hold_progress_obj.insertBefore(progress_text, null);
+    line.insertBefore(tr_container_hold_progress_obj, null);
+    return line;// 在此处直接产生一个progress对象，便于以后的函数操作。
 }
 
 function check_upload_files(event) {
     let server_spare_space = 1e7;// TODO: 询问后端
     let table = document.getElementById("files_table");
     clear_table(table);
-    let files = event.target.files;
+    let files = this.files;
     for (let index in files) {
         if (files.hasOwnProperty(index)) {
             let file = files[index];
@@ -93,9 +103,25 @@ function check_upload_files(event) {
             } else {
                 keep_time_string = seconds_to_readable(last_time_seconds);
             }
-            table.insertBefore(create_table_line(
-                [file.name, file_bytes_string, keep_time_string]), null)
+            let table_line = create_table_line([file.name, file_bytes_string, keep_time_string], file.size);
+            table.insertBefore(table_line, null)
         }
+    }
+}
+
+function upload_single_file(file, index) {// index意思就是，这是第几个正在上传的文件，以便绑定。
+    let bar = document.getElementsByClassName("bar")[index];
+    let tex = document.getElementsByClassName("lint")[index];
+    bar.value = 0;
+    tex.innerText = "0%";
+    let formData = new FormData();// 传输文件的话，是按照formData格式传输对象，所以在此处构建FormData。
+    formData.append("file", file);
+    upload_one_file_to_server(formData, bar.value, tex.innerText);// 让下层引用progress对象的value，在上传过程中动态修改。
+}
+
+function submit_all_files(file_list) {
+    for (let i in file_list) {
+        upload_single_file(file_list[i], i)
     }
 }
 
@@ -103,9 +129,8 @@ window.onload = function () {
     let upload_file_list = document.getElementById("up_input");
     let submit_button = document.getElementById("sm_button");
     submit_button.onclick = function () {
-        let formData = new FormData();
-        formData.append("file", upload_file_list.files[0]);
-        upload_files_to_server(formData);// TODO: 仅上传第一个文件
+        submit_all_files(upload_file_list.files);
+        submit_button.enabled = false
     };
     upload_file_list.onchange = check_upload_files;
 };
