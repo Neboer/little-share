@@ -1,12 +1,16 @@
-function upload_one_file_to_server(file, value_change, percentage_string_change) {
+function update_progressBar_and_text(index, value) {
+    let bar = document.getElementsByClassName("bar")[index];
+    let tex = document.getElementsByClassName("lint")[index];
+    bar.value = value;
+    let percent = value * 100 / bar.max;
+    tex.innerText = percent.toFixed(1) + "%"
+}
+
+function upload_one_file_to_server(file, index) {
     axios.post("/upload", file, {
         onUploadProgress: function (progressEvent) {
-            value_change = progressEvent.loaded;
+            update_progressBar_and_text(index, progressEvent.loaded);
             console.log(progressEvent)
-            // percentage_string_change = progressEvent
-            // for (let i in value_list_need_to_change) {
-            //     value_list_need_to_change[i] = progressEvent.loaded;
-            // }
         }, headers: {
             'Content-Type': 'multipart/form-data'
         }

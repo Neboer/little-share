@@ -20,8 +20,15 @@ func main() {
 		}
 	})
 	r.POST("/upload", func(c *gin.Context) {
-		fileForm, _ := c.FormFile("file")
-		fileUpload, _ := fileForm.Open()
+		fileForm, err := c.FormFile("file")
+		if err != nil {
+			log.Println(err.Error())
+			c.Abort()
+		}
+		fileUpload, err := fileForm.Open()
+		if err != nil {
+			c.Abort()
+		}
 		_ = lib.StoreToLocal(fileForm.Filename, fileForm.Size, fileUpload)
 		log.Println(fileForm.Filename)
 	})

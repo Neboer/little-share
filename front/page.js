@@ -72,16 +72,18 @@ function create_table_line(file_metadata, file_size_bytes) {
             line.appendChild(child_table_row_element);
         }
     }
+    //
     let progress_obj = document.createElement("progress");
     progress_obj.max = file_size_bytes;
     progress_obj.className = "bar";
     let tr_container_hold_progress_obj = document.createElement("td");
-    tr_container_hold_progress_obj.className = "lint";
     tr_container_hold_progress_obj.insertBefore(progress_obj, null);
-    let progress_text = document.createTextNode("Waiting...");
+    let progress_text = document.createElement("small");
+    progress_text.className = "lint";
+    progress_text.innerText = "waiting...";
     tr_container_hold_progress_obj.insertBefore(progress_text, null);
     line.insertBefore(tr_container_hold_progress_obj, null);
-    return line;// 在此处直接产生一个progress对象，便于以后的函数操作。
+    return line;
 }
 
 function check_upload_files(event) {
@@ -116,7 +118,7 @@ function upload_single_file(file, index) {// index意思就是，这是第几个
     tex.innerText = "0%";
     let formData = new FormData();// 传输文件的话，是按照formData格式传输对象，所以在此处构建FormData。
     formData.append("file", file);
-    upload_one_file_to_server(formData, bar.value, tex.innerText);// 让下层引用progress对象的value，在上传过程中动态修改。
+    upload_one_file_to_server(formData, index);// 让下层引用progress对象的value，在上传过程中动态修改。
 }
 
 function submit_all_files(file_list) {
