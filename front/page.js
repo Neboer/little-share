@@ -123,7 +123,9 @@ function upload_single_file(file, index) {// index意思就是，这是第几个
 
 function submit_all_files(file_list) {
     for (let i in file_list) {
-        upload_single_file(file_list[i], i)
+        if (file_list.hasOwnProperty(i)) {
+            upload_single_file(file_list[i], i)
+        }
     }
 }
 

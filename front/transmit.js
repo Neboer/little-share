@@ -10,12 +10,11 @@ function upload_one_file_to_server(file, index) {
     axios.post("/upload", file, {
         onUploadProgress: function (progressEvent) {
             update_progressBar_and_text(index, progressEvent.loaded);
-            console.log(progressEvent)
-        }, headers: {
-            'Content-Type': 'multipart/form-data'
         }
     }).then(() => {
     }, (err) => {
-        alert("upload error.")
+        alert("upload error.");
+    }).catch((err) => {
+        console.debug(err);
     })
 }

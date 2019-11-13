@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"os"
 	"syscall"
@@ -32,7 +31,7 @@ func calculateKeepTime(fileSize int64) time.Duration {
 func CheckUpload() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.URL.Path == "/upload" && c.Request.Method == "post" {
-			fmt.Println("good")
+			//fmt.Println("good")
 		} else {
 			//fmt.Println(c.Request.URL.Path)
 		}

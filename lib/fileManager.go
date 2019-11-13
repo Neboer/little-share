@@ -1,21 +1,29 @@
 package lib
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
-	"mime/multipart"
-	"os"
 	"strconv"
 	"time"
 )
 
-func StoreToLocal(fileName string, fileSize int64, file multipart.File) error {
-	newFile, e := os.Create("files/" + fileName)
-	fileContent := make([]byte, fileSize)
-	_, e = file.Read(fileContent)
-	_, e = newFile.Write(fileContent)
-	e = newFile.Close()
-	return e
+func StoreToLocal(c *gin.Context) error {
+	_, header, err := c.Request.FormFile("file")
+	filename := header.Filename
+	fmt.Println(header.Filename)
+	err = c.SaveUploadedFile(header, "files/"+filename)
+	//out, err := os.Create("./files/" + filename)
+	//log.Println(err)
+	//if err != nil {
+	//	log.Println(err)
+	//}
+	//defer out.Close()
+	//_, err = io.Copy(out, file)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	return err
 }
 
 func removeOutOfDateFiles() {
@@ -27,7 +35,6 @@ func KeepTimeChecker() {
 	for {
 		if time.Now().Hour() != currentHour {
 			currentHour = time.Now().Hour()
-
 		}
 	}
 }
