@@ -4,25 +4,26 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
+	"log"
 	"strconv"
 	"time"
 )
 
 func StoreToLocal(c *gin.Context) error {
+	defer func() {
+		err := recover()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 	_, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.AbortWithStatusJSON(499, gin.H{"error": "no 'file' in request body."})
+		return err
+	}
 	filename := header.Filename
 	fmt.Println(header.Filename)
 	err = c.SaveUploadedFile(header, "files/"+filename)
-	//out, err := os.Create("./files/" + filename)
-	//log.Println(err)
-	//if err != nil {
-	//	log.Println(err)
-	//}
-	//defer out.Close()
-	//_, err = io.Copy(out, file)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
 	return err
 }
 
