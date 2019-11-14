@@ -39,33 +39,45 @@ type FileData struct {
 	FileSurplusKeepTime time.Duration
 }
 
-func GetFileList() []FileData {
-	var FileList []FileData
+func GetStoredFilesFolder() []os.FileInfo {
 	f, _ := os.Open("files")
 	i, _ := f.Readdir(-1)
+	return i
+}
+
+func calculateTotalFileSize(i []os.FileInfo) int64 {
+	var CurrentTotalFileSize int64 = 0
 	for _, fi := range i {
-		fd := FileData{fi.Name(), fi.Size(), time.Now().Sub(fi.ModTime())}
-		FileList = append(FileList,fd)
+		CurrentTotalFileSize += fi.Size()
+	}
+	return CurrentTotalFileSize
+}
+
+func GetCurrentTotalFileSize() int64 {
+	i := GetStoredFilesFolder()
+	return calculateTotalFileSize(i)
+}
+
+func GetFileList(MaxSpaceUsageBytes int64) []FileData {
+	var FileList []FileData
+	i := GetStoredFilesFolder()
+	CurrentTotalFileSize := calculateTotalFileSize(i)
+	for _, fi := range i {
+		FileSurplusKeepTime := TotalKeepTimeCalc(fi.Size(), CurrentTotalFileSize, MaxSpaceUsageBytes) - time.Now().Sub(fi.ModTime())
+		fdt := FileData{fi.Name(), fi.Size(), FileSurplusKeepTime}
+		FileList = append(FileList, fdt)
 	}
 	return FileList
 }
 
-func removeOutOfDateFiles() {
-
+func TotalKeepTimeCalc(FileSizeBytes int64, CurrentTotalFileSizeBytes int64, MaxSpaceUsageBytes int64) time.Duration {
+	totalTime := (MaxSpaceUsageBytes - CurrentTotalFileSizeBytes) / FileSizeBytes
+	return time.Duration(totalTime) * time.Hour
 }
 
-func TotalKeepTime(fileSizeBytes int64) {
-	currentHour := time.Now().Hour()
-	for {
-		if time.Now().Hour() != currentHour {
-			currentHour = time.Now().Hour()
-		}
-	}
-}
-
-func ReadMaxSpaceUsage(c gin.Context) {
+func ReadMaxSpaceUsage() int64 {
 	fileContent, _ := ioutil.ReadFile("maxSpaceUsage")
 	maxSpaceUsageString := string(fileContent)
 	maxSpaceUsage, _ := strconv.Atoi(maxSpaceUsageString)
-	c.Keys["maxSpaceUsage"] = maxSpaceUsage
+	return int64(maxSpaceUsage)
 }
