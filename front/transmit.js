@@ -6,8 +6,14 @@ function update_progressBar_and_text(index, value) {
     tex.innerText = percent.toFixed(1) + "%"
 }
 
+function get_max_spare_space() {
+    return axios.get("/maxSpace").then((res) => {
+        return parseInt(res.data)
+    })
+}
+
 function upload_one_file_to_server(file, index) {
-    axios.post("/upload", file, {
+    return axios.post("/upload", file, {
         onUploadProgress: function (progressEvent) {
             update_progressBar_and_text(index, progressEvent.loaded);
         }
@@ -18,3 +24,5 @@ function upload_one_file_to_server(file, index) {
         console.debug(err);
     })
 }
+
+

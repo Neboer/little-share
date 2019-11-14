@@ -87,28 +87,30 @@ function create_table_line(file_metadata, file_size_bytes) {
 }
 
 function check_upload_files(event) {
-    let server_spare_space = 1e7;// TODO: 询问后端
-    let table = document.getElementById("files_table");
-    clear_table(table);
-    let files = this.files;
-    for (let index in files) {
-        if (files.hasOwnProperty(index)) {
-            let file = files[index];
-            let file_bytes_string = bytes_to_readable_string(file.size);
-            if (!file_bytes_string) {
-                continue;
+    get_max_spare_space().then((server_spare_space) => {
+        let table = document.getElementById("files_table");
+        clear_table(table);
+        let files = this.files;
+        for (let index in files) {
+            if (files.hasOwnProperty(index)) {
+                let file = files[index];
+                let file_bytes_string = bytes_to_readable_string(file.size);
+                if (!file_bytes_string) {
+                    continue;
+                }
+                let last_time_seconds = calculate_last_time_seconds(file.size, server_spare_space);
+                let keep_time_string;
+                if (last_time_seconds == null) {// 永久保存
+                    keep_time_string = "永久";
+                } else {
+                    keep_time_string = seconds_to_readable(last_time_seconds);
+                }
+                let table_line = create_table_line([file.name, file_bytes_string, keep_time_string], file.size);
+                table.insertBefore(table_line, null)
             }
-            let last_time_seconds = calculate_last_time_seconds(file.size, server_spare_space);
-            let keep_time_string;
-            if (last_time_seconds == null) {// 永久保存
-                keep_time_string = "永久";
-            } else {
-                keep_time_string = seconds_to_readable(last_time_seconds);
-            }
-            let table_line = create_table_line([file.name, file_bytes_string, keep_time_string], file.size);
-            table.insertBefore(table_line, null)
         }
-    }
+    })
+
 }
 
 function upload_single_file(file, index) {// index意思就是，这是第几个正在上传的文件，以便绑定。
@@ -118,7 +120,9 @@ function upload_single_file(file, index) {// index意思就是，这是第几个
     tex.innerText = "0%";
     let formData = new FormData();// 传输文件的话，是按照formData格式传输对象，所以在此处构建FormData。
     formData.append("file", file);
-    upload_one_file_to_server(formData, index);// 让下层引用progress对象的value，在上传过程中动态修改。
+    upload_one_file_to_server(formData, index).then(() => {
+
+    })
 }
 
 function submit_all_files(file_list) {
@@ -130,6 +134,9 @@ function submit_all_files(file_list) {
 }
 
 window.onload = function () {
+    get_max_spare_space().then((server_spare_space) => {
+        document.getElementById("space").innerText = bytes_to_readable_string(server_spare_space);
+    });
     let upload_file_list = document.getElementById("up_input");
     let submit_button = document.getElementById("sm_button");
     submit_button.onclick = function () {
