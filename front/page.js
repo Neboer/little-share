@@ -37,22 +37,36 @@ function calculate_last_time_seconds(size, spare_space_bytes) {
     }
 }
 
-function update_spare_space_info(){
-	get_max_spare_space().then((server_spare_space) => {                                                              document.getElementById("space").innerText = bytes_to_readable_string(server_spare_space);                });
+function update_spare_space_info() {
+    get_max_spare_space().then((server_spare_space) => {
+        document.getElementById("space").innerText = bytes_to_readable_string(server_spare_space);
+    });
 }
 
-function update_files_list_table(){
-    files_table = document.getElementById("files_table");
-    get_files_list().then((filesList)=>{
-        for(let index in filesList){
-            if(filesList.hasOwnProperty(index)){
-		one_file = filesList[index]
-                info_line = document.createElement("tr")
-
-
-
-	    }
-	}
+function update_files_list_table() {
+    let files_table = document.getElementById("files_list_table");
+    clear_table(files_table);
+    get_files_list().then((filesList) => {
+        for (let index in filesList) {
+            if (filesList.hasOwnProperty(index)) {
+                let one_file = filesList[index];
+                let info_line = document.createElement("tr");
+                let file_name_td = document.createElement("td");
+                file_name_td.innerText = one_file["FileName"];
+                let file_size_td = document.createElement("td");
+                file_size_td.innerText = bytes_to_readable_string(one_file["FileSizeBytes"]);
+                let file_time_td = document.createElement("td");
+                file_time_td.innerText = seconds_to_readable(one_file["FileSurplusKeepTime"]);
+                let download = document.createElement("a");
+                download.href = "/files/" + one_file["FileName"];
+                download.innerText = "下载";
+                info_line.insertBefore(file_name_td, null);
+                info_line.insertBefore(file_size_td, null);
+                info_line.insertBefore(file_time_td, null);
+                info_line.insertBefore(download, null);
+                files_table.insertBefore(info_line, null);
+            }
+        }
     })
 }
 
@@ -140,7 +154,7 @@ function upload_single_file(file, index) {// index意思就是，这是第几个
     tex.innerText = "0%";
     let formData = new FormData();// 传输文件的话，是按照formData格式传输对象，所以在此处构建FormData。
     formData.append("file", file);
-    upload_one_file_to_server(formData, index).then(update_spare_space_info)
+    upload_one_file_to_server(formData, index).then(update_spare_space_info).then(update_files_list_table)
 }
 
 function submit_all_files(file_list) {
@@ -153,6 +167,7 @@ function submit_all_files(file_list) {
 
 window.onload = function () {
     update_spare_space_info();
+    update_files_list_table();
     let upload_file_list = document.getElementById("up_input");
     let submit_button = document.getElementById("sm_button");
     submit_button.onclick = function () {

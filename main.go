@@ -11,6 +11,7 @@ func main() {
 	r := gin.Default()
 	MaxSpaceUsage := lib.ReadMaxSpaceUsage()
 	r.Use(static.Serve("/", static.LocalFile("front", true)))
+	r.Use(static.Serve("/files", static.LocalFile("files", false)))
 	r.GET("/maxSpace", func(c *gin.Context) {
 		c.String(200,strconv.Itoa(int(MaxSpaceUsage-lib.GetCurrentTotalFileSize())))
 	})
