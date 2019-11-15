@@ -25,4 +25,8 @@ function upload_one_file_to_server(file, index) {
     })
 }
 
-
+function get_files_list() {
+    return axios.get("/files").then((list)=>{
+        return json.Stringify(list)
+    })
+}

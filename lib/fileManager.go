@@ -71,7 +71,9 @@ func GetFileList(MaxSpaceUsageBytes int64) []FileData {
 }
 
 func TotalKeepTimeCalc(FileSizeBytes int64, CurrentTotalFileSizeBytes int64, MaxSpaceUsageBytes int64) time.Duration {
-	totalTime := (MaxSpaceUsageBytes - CurrentTotalFileSizeBytes) / FileSizeBytes
+	var totalTime float64
+	totalTime = (float64(MaxSpaceUsageBytes) - float64(CurrentTotalFileSizeBytes)) / float64(FileSizeBytes)
+	log.Println(totalTime)
 	return time.Duration(totalTime) * time.Hour
 }
 

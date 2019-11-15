@@ -37,6 +37,26 @@ function calculate_last_time_seconds(size, spare_space_bytes) {
     }
 }
 
+function update_spare_space_info(){
+	get_max_spare_space().then((server_spare_space) => {                                                              document.getElementById("space").innerText = bytes_to_readable_string(server_spare_space);                });
+}
+
+function update_files_list_table(){
+    files_table = document.getElementById("files_table");
+    get_files_list().then((filesList)=>{
+        for(let index in filesList){
+            if(filesList.hasOwnProperty(index)){
+		one_file = filesList[index]
+                info_line = document.createElement("tr")
+
+
+
+	    }
+	}
+    })
+}
+
+
 function bytes_to_readable_string(size, spare_space_bytes) {
     if (size >= spare_space_bytes) {
         alert("内部存储空间不足，暂时无法传输！");
@@ -120,9 +140,7 @@ function upload_single_file(file, index) {// index意思就是，这是第几个
     tex.innerText = "0%";
     let formData = new FormData();// 传输文件的话，是按照formData格式传输对象，所以在此处构建FormData。
     formData.append("file", file);
-    upload_one_file_to_server(formData, index).then(() => {
-
-    })
+    upload_one_file_to_server(formData, index).then(update_spare_space_info)
 }
 
 function submit_all_files(file_list) {
@@ -134,9 +152,7 @@ function submit_all_files(file_list) {
 }
 
 window.onload = function () {
-    get_max_spare_space().then((server_spare_space) => {
-        document.getElementById("space").innerText = bytes_to_readable_string(server_spare_space);
-    });
+    update_spare_space_info();
     let upload_file_list = document.getElementById("up_input");
     let submit_button = document.getElementById("sm_button");
     submit_button.onclick = function () {
