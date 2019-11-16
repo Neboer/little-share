@@ -28,6 +28,13 @@ function seconds_to_readable(seconds) {
     return 'less than a minute'; //'just now' //or other string you like;
 }
 
+function clear_table(table_item) {
+    while (table_item.childElementCount > 1) {
+        table_item.removeChild(table_item.children[table_item.childElementCount - 1])
+    }
+}
+
+
 function calculate_last_time_seconds(size, spare_space_bytes) {
     let store_for_days = spare_space_bytes / size;
     if (store_for_days > 400) {
@@ -45,8 +52,8 @@ function update_spare_space_info() {
 
 function update_files_list_table() {
     let files_table = document.getElementById("files_list_table");
-    clear_table(files_table);
     get_files_list().then((filesList) => {
+        clear_table(files_table);
         for (let index in filesList) {
             if (filesList.hasOwnProperty(index)) {
                 let one_file = filesList[index];
@@ -90,11 +97,6 @@ function bytes_to_readable_string(size, spare_space_bytes) {
     }
 }
 
-function clear_table(table_item) {
-    while (table_item.childElementCount > 1) {
-        table_item.removeChild(table_item.children[table_item.childElementCount - 1])
-    }
-}
 
 function create_table_line(file_metadata, file_size_bytes) {
     let line = document.createElement("tr");

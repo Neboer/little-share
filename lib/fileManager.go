@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -11,7 +12,15 @@ import (
 	"time"
 )
 
-func StoreToLocal(c *gin.Context) error {
+type FileData struct {
+	FileName            string
+	FileSizeBytes       int64
+	FileSurplusKeepTime time.Duration
+}
+
+type FileTotalKeepTime map[string]time.Duration
+
+func StoreToLocal(c *gin.Context, MaxSpaceUsage int64, maxKeepTimeDbJsonList *FileTotalKeepTime) error {
 	defer func() {
 		err := recover()
 		if err != nil {
@@ -29,14 +38,10 @@ func StoreToLocal(c *gin.Context) error {
 	}
 	filename := header.Filename
 	fmt.Println(header.Filename)
+	(*maxKeepTimeDbJsonList)[filename] = TotalKeepTimeCalc(header.Size, GetCurrentTotalFileSize(), MaxSpaceUsage)
+	WriteKeepTimeDB(maxKeepTimeDbJsonList)
 	err = c.SaveUploadedFile(header, "files/"+filename)
 	return err
-}
-
-type FileData struct {
-	FileName            string
-	FileSizeBytes       int64
-	FileSurplusKeepTime time.Duration
 }
 
 func GetStoredFilesFolder() []os.FileInfo {
@@ -58,23 +63,21 @@ func GetCurrentTotalFileSize() int64 {
 	return calculateTotalFileSize(i)
 }
 
-func GetFileList(MaxSpaceUsageBytes int64) []FileData {
+func GetFileList(maxKeepTimeDbJsonList *FileTotalKeepTime) []FileData {
 	var FileList []FileData
 	i := GetStoredFilesFolder()
-	CurrentTotalFileSize := calculateTotalFileSize(i)
 	for _, fi := range i {
-		FileSurplusKeepTime := TotalKeepTimeCalc(fi.Size(), CurrentTotalFileSize, MaxSpaceUsageBytes) - time.Now().Sub(fi.ModTime())
-		fdt := FileData{fi.Name(), fi.Size(), FileSurplusKeepTime}
+		FileSurplusKeepTime := (*maxKeepTimeDbJsonList)[fi.Name()] - time.Now().Sub(fi.ModTime())
+		fdt := FileData{fi.Name(), fi.Size(), FileSurplusKeepTime / 1e9}
 		FileList = append(FileList, fdt)
 	}
 	return FileList
 }
 
 func TotalKeepTimeCalc(FileSizeBytes int64, CurrentTotalFileSizeBytes int64, MaxSpaceUsageBytes int64) time.Duration {
-	var totalTime float64
-	totalTime = (float64(MaxSpaceUsageBytes) - float64(CurrentTotalFileSizeBytes)) / float64(FileSizeBytes)
-	log.Println(totalTime)
-	return time.Duration(totalTime) * time.Hour
+	var totalDays float64
+	totalDays = (float64(MaxSpaceUsageBytes) - float64(CurrentTotalFileSizeBytes)) / float64(FileSizeBytes)
+	return time.Duration(totalDays * 24 * float64(time.Hour))
 }
 
 func ReadMaxSpaceUsage() int64 {
@@ -82,4 +85,25 @@ func ReadMaxSpaceUsage() int64 {
 	maxSpaceUsageString := string(fileContent)
 	maxSpaceUsage, _ := strconv.Atoi(maxSpaceUsageString)
 	return int64(maxSpaceUsage)
+}
+
+func ReadKeepTimeDB() FileTotalKeepTime {
+	maxKeepTimeDbJsonData, err := ioutil.ReadFile("filesMaxKeepTime.json")
+	if err != nil {
+		log.Fatalf("cannot load json data filesMaxKeepTime.json. %s", err.Error())
+	}
+	var maxKeepTimeDb FileTotalKeepTime
+	err = json.Unmarshal(maxKeepTimeDbJsonData, &maxKeepTimeDb)
+	if err != nil {
+		log.Fatalf("cannot parse json data. %s", err.Error())
+	}
+	return maxKeepTimeDb
+}
+
+func WriteKeepTimeDB(FileTotalKeepTimeData *FileTotalKeepTime) {
+	FileTotalKeepTimeBytes, _ := json.Marshal(FileTotalKeepTimeData)
+	err := ioutil.WriteFile("filesMaxKeepTime.json", FileTotalKeepTimeBytes, 0755)
+	if err != nil {
+		log.Fatalf("cannot write file! %s", err.Error())
+	}
 }
