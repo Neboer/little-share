@@ -13,9 +13,9 @@ import (
 )
 
 type FileData struct {
-	FileName            string
-	FileSizeBytes       int64
-	FileSurplusKeepTime time.Duration
+	FileName               string
+	FileSizeBytes          int64
+	FileSurplusKeepSeconds int64
 }
 
 type FileTotalKeepTime map[string]time.Duration
@@ -96,7 +96,7 @@ func GetFileList(maxKeepTimeDbJsonList *FileTotalKeepTime) []FileData {
 	i := GetStoredFilesFolder()
 	for _, fi := range i {
 		FileSurplusKeepTime := (*maxKeepTimeDbJsonList)[fi.Name()] - time.Now().Sub(fi.ModTime())
-		fdt := FileData{fi.Name(), fi.Size(), FileSurplusKeepTime / 1e9}
+		fdt := FileData{fi.Name(), fi.Size(), int64(FileSurplusKeepTime / time.Second)}
 		FileList = append(FileList, fdt)
 	}
 	return FileList

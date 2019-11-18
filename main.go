@@ -36,5 +36,7 @@ func main() {
 	r.POST("/upload", func(c *gin.Context) {
 		_ = lib.StoreToLocal(c, MaxSpaceUsage, &maxKeepTimeDbJsonList)
 	})
+	go lib.CheckAndDelete(&maxKeepTimeDbJsonList)
 	_ = r.Run(":8081")
+
 }
