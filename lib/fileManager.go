@@ -50,6 +50,34 @@ func GetStoredFilesFolder() []os.FileInfo {
 	return i
 }
 
+const (
+	OperationSuccessful = 0
+	NoSuchFileError     = 1
+	OtherError          = 2
+)
+
+type FileError int8
+
+func DeleteOneFile(fileName string, maxKeepTimeDbJsonList *FileTotalKeepTime) FileError {
+	if _, isExist := (*maxKeepTimeDbJsonList)[fileName]; isExist == true {
+		delete(*maxKeepTimeDbJsonList, fileName)
+		WriteKeepTimeDB(maxKeepTimeDbJsonList)
+		err := os.Remove("./files/" + fileName)
+		if err == nil {
+			return OperationSuccessful
+		} else if err == err.(*os.PathError) {
+			return NoSuchFileError // 应该不会删不去文件的吧...
+		} else {
+			// 500了……
+			log.Println(err.Error())
+			return OtherError
+		}
+	} else {
+		//　文件肯定不存在
+		return NoSuchFileError
+	}
+}
+
 func calculateTotalFileSize(i []os.FileInfo) int64 {
 	var CurrentTotalFileSize int64 = 0
 	for _, fi := range i {

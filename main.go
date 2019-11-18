@@ -12,7 +12,6 @@ func main() {
 	maxKeepTimeDbJsonList := lib.ReadKeepTimeDB()
 	MaxSpaceUsage := lib.ReadMaxSpaceUsage()
 	r.Use(static.Serve("/", static.LocalFile("front", true)))
-	r.Use(static.Serve("/files", static.LocalFile("files", false)))
 	r.GET("/maxSpace", func(c *gin.Context) {
 		c.String(200, strconv.Itoa(int(MaxSpaceUsage-lib.GetCurrentTotalFileSize())))
 	})
@@ -20,6 +19,20 @@ func main() {
 		FileList := lib.GetFileList(&maxKeepTimeDbJsonList)
 		c.JSON(200, FileList)
 	})
+	r.DELETE("/files/:file", func(c *gin.Context) {
+		FileNameNeedToDelete := c.Param("file")
+		fileErr := lib.DeleteOneFile(FileNameNeedToDelete, &maxKeepTimeDbJsonList)
+		if fileErr != lib.OperationSuccessful {
+			if fileErr == lib.NoSuchFileError {
+				c.String(404, "no such file: %s", FileNameNeedToDelete)
+			} else {
+				c.String(500, "internal server error.")
+			}
+		} else {
+			c.String(200, "file %s has been delete.", FileNameNeedToDelete)
+		}
+	})
+	r.Use(static.Serve("/files", static.LocalFile("files", false)))
 	r.POST("/upload", func(c *gin.Context) {
 		_ = lib.StoreToLocal(c, MaxSpaceUsage, &maxKeepTimeDbJsonList)
 	})
