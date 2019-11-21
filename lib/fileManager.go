@@ -25,6 +25,7 @@ func StoreToLocal(c *gin.Context, MaxSpaceUsage int64, maxKeepTimeDbJsonList *Fi
 		err := recover()
 		if err != nil {
 			if err == io.ErrUnexpectedEOF {
+				c.AbortWithStatusJSON(500, gin.H{"server": "bad upload file(s)"})
 				log.Println("uploader terminate the connection before it complete.")
 			}
 			log.Println(err)
@@ -37,6 +38,9 @@ func StoreToLocal(c *gin.Context, MaxSpaceUsage int64, maxKeepTimeDbJsonList *Fi
 		return err
 	}
 	filename := header.Filename
+	if header.Size >= MaxSpaceUsage-GetCurrentTotalFileSize() {
+		c.AbortWithStatusJSON(413, gin.H{"error": "file too large!"})
+	}
 	fmt.Println(header.Filename)
 	(*maxKeepTimeDbJsonList)[filename] = TotalKeepTimeCalc(header.Size, GetCurrentTotalFileSize(), MaxSpaceUsage)
 	WriteKeepTimeDB(maxKeepTimeDbJsonList)

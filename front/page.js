@@ -63,14 +63,25 @@ function update_files_list_table() {
                 let file_size_td = document.createElement("td");
                 file_size_td.innerText = bytes_to_readable_string(one_file["FileSizeBytes"]);
                 let file_time_td = document.createElement("td");
-                file_time_td.innerText = seconds_to_readable(one_file["FileSurplusKeepTime"]);
+                file_time_td.innerText = seconds_to_readable(one_file["FileSurplusKeepSeconds"]);
                 let download = document.createElement("a");
                 download.href = "/files/" + one_file["FileName"];
                 download.innerText = "下载";
+                let deleter = document.createElement("a");
+                deleter.href = "javascript:{void(0)}";
+                deleter.onclick = () => {
+                    axios.delete("/files/" + one_file["FileName"]).then(() => {
+                        alert("成功删除。");
+                        update_files_list_table();
+                        update_spare_space_info();
+                    });
+                };
+                deleter.innerText = "删除";
                 info_line.insertBefore(file_name_td, null);
                 info_line.insertBefore(file_size_td, null);
                 info_line.insertBefore(file_time_td, null);
                 info_line.insertBefore(download, null);
+                info_line.insertBefore(deleter, null);
                 files_table.insertBefore(info_line, null);
             }
         }
@@ -78,23 +89,15 @@ function update_files_list_table() {
 }
 
 
-function bytes_to_readable_string(size, spare_space_bytes) {
-    if (size >= spare_space_bytes) {
-        alert("内部存储空间不足，暂时无法传输！");
-        return null
-    }
+function bytes_to_readable_string(size) {
     if (size < 1e4) {
         return size.toString() + "B";
     } else if (size < 1e6) {
         return (size / 1000).toFixed(2) + "KB";
     } else if (size < 1e9) {
         return (size / 1e6).toFixed(2) + "MB";
-    } else if (size < 1e10) {
+    } else
         return (size / 1e9).toFixed(3) + "GB";
-    } else {
-        alert("上传过大文件（超过10G），无法传输！");
-        return null
-    }
 }
 
 
@@ -123,13 +126,20 @@ function create_table_line(file_metadata, file_size_bytes) {
 }
 
 function check_upload_files(event) {
-    get_max_spare_space().then((server_spare_space) => {
+    let can_upload_files = [];
+    return get_max_spare_space().then((server_spare_space) => {
         let table = document.getElementById("files_table");
         clear_table(table);
         let files = this.files;
         for (let index in files) {
             if (files.hasOwnProperty(index)) {
                 let file = files[index];
+                if (file.size >= server_spare_space) {
+                    alert("文件" + file.name + "大于服务器剩余空间，无法上传。");
+                    continue
+                } else {
+                    can_upload_files.push(file);
+                }
                 let file_bytes_string = bytes_to_readable_string(file.size);
                 if (!file_bytes_string) {
                     continue;
@@ -145,8 +155,8 @@ function check_upload_files(event) {
                 table.insertBefore(table_line, null)
             }
         }
+        return can_upload_files
     })
-
 }
 
 function upload_single_file(file, index) {// index意思就是，这是第几个正在上传的文件，以便绑定。
@@ -172,9 +182,9 @@ window.onload = function () {
     update_files_list_table();
     let upload_file_list = document.getElementById("up_input");
     let submit_button = document.getElementById("sm_button");
-    submit_button.onclick = function () {
-        submit_all_files(upload_file_list.files);
-        submit_button.enabled = false
-    };
-    upload_file_list.onchange = check_upload_files;
+    upload_file_list.onchange = check_upload_files.then(can_upload_files => {
+        submit_button.onclick = function () {
+            submit_all_files(can_upload_files);
+        };
+    })
 };
