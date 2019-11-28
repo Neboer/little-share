@@ -1,16 +1,22 @@
 package lib
 
-import "time"
+import (
+	"log"
+	"time"
+)
 
 func CheckAndDelete(maxKeepTimeDbJsonList *FileTotalKeepTime) {
+	log.Println("Will delete outdated files.")
 	for {
 		fileList := GetFileList(maxKeepTimeDbJsonList)
 		for _, fileItem := range fileList {
-			//　总保存时长小于0
-			if fileItem.FileSurplusKeepTime <= time.Duration(0) {
+			//　每分钟检查一次，删除剩余保存时长很少的文件(1秒)
+			if fileItem.FileSurplusKeepSeconds <= 1 {
 				DeleteOneFile(fileItem.FileName, maxKeepTimeDbJsonList)
+				log.Printf("Delete outdated file: %s", fileItem.FileName)
 			}
 		}
+		time.Sleep(time.Minute)
 	}
 }
 
