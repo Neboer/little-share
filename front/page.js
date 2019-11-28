@@ -81,6 +81,7 @@ function update_files_list_table() {
 function bytes_to_readable_string(size, spare_space_bytes) {
     if (size >= spare_space_bytes) {
         alert("内部存储空间不足，暂时无法传输！");
+	location.reload()
         return null
     }
     if (size < 1e4) {
