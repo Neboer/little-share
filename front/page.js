@@ -125,10 +125,9 @@ function create_table_line(file_metadata, file_size_bytes) {
     return line;
 }
 
-function check_upload_files(event) {
-    let can_upload_files = [];
-    return get_max_spare_space().then((server_spare_space) => {
-        let table = document.getElementById("files_table");
+function check_upload_files_and_update_table() {
+    get_max_spare_space().then((server_spare_space) => {
+        let table = document.getElementById("files_table");// 得到已经选择的文件的表格
         clear_table(table);
         let files = this.files;
         for (let index in files) {
@@ -136,9 +135,9 @@ function check_upload_files(event) {
                 let file = files[index];
                 if (file.size >= server_spare_space) {
                     alert("文件" + file.name + "大于服务器剩余空间，无法上传。");
-                    continue
-                } else {
-                    can_upload_files.push(file);
+                    clear_table(table);
+                    document.getElementById("up_input").value = '';
+                    return null
                 }
                 let file_bytes_string = bytes_to_readable_string(file.size);
                 if (!file_bytes_string) {
@@ -155,7 +154,6 @@ function check_upload_files(event) {
                 table.insertBefore(table_line, null)
             }
         }
-        return can_upload_files
     })
 }
 
@@ -182,9 +180,10 @@ window.onload = function () {
     update_files_list_table();
     let upload_file_list = document.getElementById("up_input");
     let submit_button = document.getElementById("sm_button");
-    upload_file_list.onchange = check_upload_files.then(can_upload_files => {
-        submit_button.onclick = function () {
-            submit_all_files(can_upload_files);
-        };
-    })
+    upload_file_list.onchange = check_upload_files_and_update_table;
+    submit_button.onclick = function () {
+        check_upload_files_and_update_table();
+        submit_all_files(upload_file_list.files);
+
+    }
 };

@@ -2,7 +2,6 @@ package lib
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
 	"io/ioutil"
@@ -41,7 +40,6 @@ func StoreToLocal(c *gin.Context, MaxSpaceUsage int64, maxKeepTimeDbJsonList *Fi
 	if header.Size >= MaxSpaceUsage-GetCurrentTotalFileSize() {
 		c.AbortWithStatusJSON(413, gin.H{"error": "file too large!"})
 	}
-	fmt.Println(header.Filename)
 	(*maxKeepTimeDbJsonList)[filename] = TotalKeepTimeCalc(header.Size, GetCurrentTotalFileSize(), MaxSpaceUsage)
 	WriteKeepTimeDB(maxKeepTimeDbJsonList)
 	err = c.SaveUploadedFile(header, "files/"+filename)
