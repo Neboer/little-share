@@ -68,7 +68,7 @@ function append_files_to_upload_form(files, serverMaxTotalSize, form) {
     for (let file of files) {
         let line = "<tr><td>" + file.name + "</td>" + "<td>" + bytes_to_readable_string(file.size)
             + "</td>" + "<td>" + seconds_to_readable(calculate_last_time_seconds(file.size, serverMaxTotalSize - current_size)) + "</td>"
-            + "<td><progress class='bar'></progress><small class='percent'>waiting...</small></td></tr>";
+            + "<td><progress class='bar'></progress><small>waiting...</small></td></tr>";
         form.append(line);
         current_size += file.size;
     }
@@ -81,17 +81,17 @@ function upload_single_file_to_server(file, onUploadProgressCallBack) {
 }
 
 function refresh_upload_files_table(files, server_max_size, files_table) {
-    files_table.find("tr:gt(0)").remove();
+    files_table.find("tr").remove();
     append_files_to_upload_form(files, server_max_size, files_table)
 }
 
 function refill_server_files_list(server_files_json, server_files_table, deleteCallBack) {
-    server_files_table.find("tr:gt(0)").remove();
+    server_files_table.find("tr").remove();
     for (let single_file_info of server_files_json) {
         let line = "<tr><td>" + single_file_info["FileName"] + "</td><td>" + bytes_to_readable_string(single_file_info["FileSizeBytes"]) + "</td><td>"
             + seconds_to_readable(single_file_info["FileSurplusKeepSeconds"]) + "</td></tr>";
-        let download_label = $("<a>下载</a>").prop('href', '/files/' + single_file_info["FileName"]);
-        let delete_label = $("<a>删除</a>").prop('href', 'javascript:void(0)');
+        let download_label = $("<a class='btn btn-outline-primary' style='margin-right: 10px'>下载</a>").prop('href', '/files/' + single_file_info["FileName"]);
+        let delete_label = $("<a class='btn btn-outline-danger' style='margin-left: 10px'>删除</a>").prop('href', 'javascript:void(0)');
         delete_label.click(() => {
             axios.delete('/files/' + single_file_info["FileName"]).then(() => {
                 alert("删除成功");
@@ -99,7 +99,7 @@ function refill_server_files_list(server_files_json, server_files_table, deleteC
                 alert("删除失败！");
             }).then(deleteCallBack)
         });
-        let prepared_line = $(line).append(download_label, delete_label);
+        let prepared_line = $(line).append($("<td style='text-align: center'></td>").append(download_label, delete_label));
         server_files_table.append(prepared_line)
     }
 }

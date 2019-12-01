@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>文件共享平台</title>
     <script src="library/jquery-3.4.1.min.js"></script>
+    <script src="library/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="development_library/bootstrap.min.css">
     <script src="library/axios.min.js"></script>
     <script src="tools.js"></script>
     <script src="page2.js"></script>
@@ -15,26 +17,36 @@
 <div>
     当前文件列表
     <a>刷新</a>
-    <table id="files_list_table">
+    <table class="table table-striped">
+        <thead>
         <tr>
             <td>文件名</td>
             <td>文件大小</td>
             <td>剩余时长</td>
+            <td style="text-align: center">操作</td>
         </tr>
+        </thead>
+        <tbody id="files_list_table">
+
+        </tbody>
     </table>
 </div>
-    <input type="file" id="up_input" multiple/>
-    <button type="submit" id="sm_button">提交</button>
+<input type="file" id="up_input" multiple/>
+<button type="submit" id="sm_button">提交</button>
 <div>
     已经选择的文件：
-    <table id="files_table">
+    <table class="table">
+        <thead>
         <tr>
             <td>文件名</td>
             <td>文件大小</td>
             <td>保存时长</td>
             <td>上传进度</td>
         </tr>
+        </thead>
+        <tbody id="files_table">
 
+        </tbody>
     </table>
 </div>
 </body>
