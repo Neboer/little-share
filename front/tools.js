@@ -66,9 +66,9 @@ function seconds_to_readable(seconds) {
 function append_files_to_upload_form(files, serverMaxTotalSize, form) {
     let current_size = 0;
     for (let file of files) {
-        let line = "<tr><td>" + file.name + "</td>" + "<td>" + bytes_to_readable_string(file.size)
+        let line = "<tr><td>" + file.name + "</td><td>" + bytes_to_readable_string(file.size)
             + "</td>" + "<td>" + seconds_to_readable(calculate_last_time_seconds(file.size, serverMaxTotalSize - current_size)) + "</td>"
-            + "<td><progress class='bar'></progress><small>waiting...</small></td></tr>";
+            + "<td><div class='progress'><div class='progress-bar' role='progressbar' style='width: 0;'>0%</div></div></td></tr>";
         form.append(line);
         current_size += file.size;
     }
