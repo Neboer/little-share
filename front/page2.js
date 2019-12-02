@@ -33,6 +33,7 @@ $(() => {
                 upload_single_file_to_server(files[index], (progressEvent) => {
                     //　箭头函数!!!!箭头函数中的this不能够提供我们想要的功能!
                     let percentage = (progressEvent.loaded / progressEvent.total * 100).toFixed(1) + '%';
+			// 找到需要更新的进度条。使用“同行的filename”来辨别。
                     let pbar_need_update = $("div .progress-bar").filter(function () {
                         return $(this).parents("tr").children(":first").text() === files[index].name
                     });

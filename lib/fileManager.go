@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"strings"
 )
 
 type FileData struct {
@@ -113,7 +114,7 @@ func TotalKeepTimeCalc(FileSizeBytes int64, CurrentTotalFileSizeBytes int64, Max
 func ReadMaxSpaceUsage() int64 {
 	fileContent, _ := ioutil.ReadFile("maxSpaceUsage")
 	maxSpaceUsageString := string(fileContent)
-	maxSpaceUsage, _ := strconv.Atoi(maxSpaceUsageString)
+	maxSpaceUsage, _ := strconv.Atoi(strings.TrimSpace(maxSpaceUsageString))
 	return int64(maxSpaceUsage)
 }
 
