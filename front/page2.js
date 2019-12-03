@@ -1,10 +1,12 @@
 // 我决定拥抱时代，使用JQuery
+const URLPrefix = "";
+
 function update_server_info() {
-    $.get('/maxSpace', (responseTxt) => {
+    $.get(URLPrefix + '/maxSpace', (responseTxt) => {
         $("#space").text(bytes_to_readable_string(responseTxt))
     });
 
-    $.getJSON('/files', (data) => {
+    $.getJSON(URLPrefix + '/files', (data) => {
         refill_server_files_list(data, $("#files_list_table"), () => {
             update_server_info();
         })

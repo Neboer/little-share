@@ -93,7 +93,7 @@ function refill_server_files_list(server_files_json, server_files_table, deleteC
         let download_label = $("<a class='btn btn-outline-primary' style='margin-right: 10px'>下载</a>").prop('href', '/files/' + single_file_info["FileName"]);
         let delete_label = $("<a class='btn btn-outline-danger' style='margin-left: 10px'>删除</a>").prop('href', 'javascript:void(0)');
         delete_label.click(() => {
-            axios.delete('/files/' + single_file_info["FileName"]).then(() => {
+            axios.delete(URLPrefix + '/files/' + single_file_info["FileName"]).then(() => {
                 alert("删除成功");
             }, () => {
                 alert("删除失败！");
