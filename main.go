@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	lib.CheckAllRequireFilesAndFolders()
 	r := gin.Default()
 	maxKeepTimeDbJsonList := lib.ReadKeepTimeDB()
 	MaxSpaceUsage := lib.ReadMaxSpaceUsage()

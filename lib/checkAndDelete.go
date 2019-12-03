@@ -2,8 +2,30 @@ package lib
 
 import (
 	"log"
+	"os"
 	"time"
 )
+
+func CheckAllRequireFilesAndFolders(){
+	info, err := os.Stat("files")
+	if err != nil {
+		log.Fatalf("cannot find files folder. %s", err.Error())
+	} else if !info.IsDir() {
+		log.Fatalf("files is a folder not file!")
+	}
+	info, err = os.Stat("filesMaxKeepTime.json")
+	if err != nil {
+		log.Fatalf("cannot find filesMaxKeepTime.json. %s", err.Error())
+	} else if info.IsDir() {
+		log.Fatalf("filesMaxKeepTime.json is not a folder but file!")
+	}
+	info, err = os.Stat("maxSpaceUsage")
+	if err != nil {
+		log.Fatalf("cannot find filesMaxKeepTime.json. %s", err.Error())
+	} else if info.IsDir() {
+		log.Fatalf("filesMaxKeepTime.json is not a folder but file!")
+	}
+}
 
 func CheckAndDelete(maxKeepTimeDbJsonList *FileTotalKeepTime) {
 	log.Println("Will delete outdated files.")

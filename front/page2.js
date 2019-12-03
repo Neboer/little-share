@@ -17,7 +17,7 @@ $(() => {
         $.get('/maxSpace', (responseTxt) => {
             let server_max_size = parseInt(responseTxt);
             let files = $("#up_input").prop('files');
-            if (file_size_check_allow(files, 5e7, server_max_size)) {
+            if (file_size_check_allow(files, 5e10, server_max_size)) {
                 //　文件大小校验通过。
                 refresh_upload_files_table(files, server_max_size, $("#files_table"))
             } else {
