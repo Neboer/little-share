@@ -1,10 +1,10 @@
 // 我决定拥抱时代，使用JQuery
 function update_server_info() {
-    $.get('/maxSpace', (responseTxt) => {
+    $.get('maxSpace', (responseTxt) => {
         $("#space").text(bytes_to_readable_string(responseTxt))
     });
 
-    $.getJSON('/files', (data) => {
+    $.getJSON('files', (data) => {
         refill_server_files_list(data, $("#files_list_table"), () => {
             update_server_info();
         })
@@ -14,7 +14,7 @@ function update_server_info() {
 $(() => {
     update_server_info();
     $("#up_input").change(() => {
-        $.get('/maxSpace', (responseTxt) => {
+        $.get('maxSpace', (responseTxt) => {
             let server_max_size = parseInt(responseTxt);
             let files = $("#up_input").prop('files');
             if (file_size_check_allow(files, 5e10, server_max_size)) {
