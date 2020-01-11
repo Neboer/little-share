@@ -18,7 +18,12 @@ func main() {
 	})
 	r.GET("/files", func(c *gin.Context) {
 		FileList := lib.GetFileList(&maxKeepTimeDbJsonList)
-		c.JSON(200, FileList)
+		WangJue := make([]int, 0)
+		if(len(FileList) == 0){
+			c.JSON(200, WangJue)
+		} else {
+			c.JSON(200, FileList)
+		}
 	})
 	r.DELETE("/files/:file", func(c *gin.Context) {
 		FileNameNeedToDelete := c.Param("file")
