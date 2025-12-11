@@ -1,0 +1,1 @@
+go build -o little-share.exe main.go

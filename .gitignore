@@ -1,5 +1,32 @@
-# Project exclude paths
+# Build and binaries
+*.exe
+*.dll
+*.so
+*.dylib
+/little-share
+/little-share.exe
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+
+# Go related
+/vendor/
+go.sum
+*.mod.sum
+
+# Application specific
 /files/
 /temp/
-filesMaxKeepTime.json
-maxSpaceUsage
+little-share-conf.json
+# Keep the front directory in git, but not generated files
+/front/**/*.min.js
+/front/**/*.min.css
+
+# Log files
+*.log

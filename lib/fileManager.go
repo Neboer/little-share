@@ -1,140 +1,169 @@
 package lib
 
 import (
-	"encoding/json"
-	"github.com/gin-gonic/gin"
+	"fmt"
 	"io"
-	"io/ioutil"
-	"log"
+	"log/slog"
+	"net/http"
 	"os"
-	"strconv"
-	"time"
-	"strings"
+	"path/filepath"
+
+	"github.com/gin-gonic/gin"
 )
 
-type FileData struct {
-	FileName               string
-	FileSizeBytes          int64
-	FileSurplusKeepSeconds int64
+// FileInfo holds information about a stored file
+type FileInfo struct {
+	FileName         string `json:"name"`
+	FileSizeBytes    int64  `json:"size"`
+	FileCreationTime int64  `json:"creation_time"`
 }
 
-type FileTotalKeepTime map[string]time.Duration
-
-func StoreToLocal(c *gin.Context, MaxSpaceUsage int64, maxKeepTimeDbJsonList *FileTotalKeepTime) error {
+// StoreToLocal handles file uploads and stores them on disk
+func StoreToLocal(c *gin.Context, maxStorageSize int64, fileStorePath string) error {
 	defer func() {
-		err := recover()
-		if err != nil {
-			if err == io.ErrUnexpectedEOF {
-				c.AbortWithStatusJSON(500, gin.H{"server": "bad upload file(s)"})
-				log.Println("uploader terminate the connection before it complete.")
+		if r := recover(); r != nil {
+			slog.Error("Panic during file upload", "error", r)
+			if r == io.ErrUnexpectedEOF {
+				c.AbortWithStatusJSON(http.StatusInternalServerError,
+					gin.H{"error": "Upload interrupted by client"})
 			}
-			log.Println(err)
 		}
 	}()
-	_, header, err := c.Request.FormFile("file")
+
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.AbortWithStatusJSON(400, gin.H{"error": "no 'file' in request body."})
-		log.Println(err)
+		c.AbortWithStatusJSON(http.StatusBadRequest,
+			gin.H{"error": "No 'file' field in request"})
+		slog.Error("Error reading form file", "error", err)
 		return err
 	}
+	defer file.Close()
+
 	filename := header.Filename
-	if header.Size >= MaxSpaceUsage-GetCurrentTotalFileSize() {
-		c.AbortWithStatusJSON(413, gin.H{"error": "file too large!"})
+	currentSize := GetCurrentTotalFileSize(fileStorePath)
+	availableSpace := maxStorageSize - currentSize
+
+	// Check if file is too large
+	if header.Size >= availableSpace {
+		c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge,
+			gin.H{"error": fmt.Sprintf("File too large! Available space: %d bytes", availableSpace)})
+		return fmt.Errorf("file too large: %d bytes, available: %d bytes", header.Size, availableSpace)
 	}
-	(*maxKeepTimeDbJsonList)[filename] = TotalKeepTimeCalc(header.Size, GetCurrentTotalFileSize(), MaxSpaceUsage)
-	WriteKeepTimeDB(maxKeepTimeDbJsonList)
-	err = c.SaveUploadedFile(header, "files/"+filename)
-	return err
+
+	// Ensure storage path exists
+	if err := os.MkdirAll(fileStorePath, 0755); err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError,
+			gin.H{"error": "Failed to create storage directory"})
+		slog.Error("Failed to create file store directory", "path", fileStorePath, "error", err)
+		return err
+	}
+
+	// Save the file
+	savePath := filepath.Join(fileStorePath, filename)
+	dst, err := os.Create(savePath)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError,
+			gin.H{"error": "Failed to save file"})
+		slog.Error("Failed to create output file", "path", savePath, "error", err)
+		return err
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError,
+			gin.H{"error": "Failed to write file data"})
+		slog.Error("Failed to write file", "path", savePath, "error", err)
+		return err
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("File %s uploaded successfully", filename)})
+	slog.Info("File uploaded successfully", "filename", filename, "size", header.Size)
+	return nil
 }
 
-func GetStoredFilesFolder() []os.FileInfo {
-	f, _ := os.Open("files")
-	i, _ := f.Readdir(-1)
-	return i
-}
+// DeleteOneFile deletes a file from storage
+func DeleteOneFile(fileName string, fileStorePath string) error {
+	filePath := filepath.Join(fileStorePath, fileName)
 
-const (
-	OperationSuccessful = 0
-	NoSuchFileError     = 1
-	OtherError          = 2
-)
-
-type FileError int8
-
-func DeleteOneFile(fileName string, maxKeepTimeDbJsonList *FileTotalKeepTime) FileError {
-	if _, isExist := (*maxKeepTimeDbJsonList)[fileName]; isExist == true {
-		delete(*maxKeepTimeDbJsonList, fileName)
-		WriteKeepTimeDB(maxKeepTimeDbJsonList)
-		err := os.Remove("./files/" + fileName)
-		if err == nil {
-			return OperationSuccessful
-		} else if err == err.(*os.PathError) {
-			return NoSuchFileError // 应该不会删不去文件的吧...
-		} else {
-			// 500了……
-			log.Println(err.Error())
-			return OtherError
+	// Check if file exists
+	if _, err := os.Stat(filePath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("file not found: %s", fileName)
 		}
-	} else {
-		//　文件肯定不存在
-		return NoSuchFileError
+		return fmt.Errorf("failed to stat file: %w", err)
 	}
-}
 
-func calculateTotalFileSize(i []os.FileInfo) int64 {
-	var CurrentTotalFileSize int64 = 0
-	for _, fi := range i {
-		CurrentTotalFileSize += fi.Size()
+	// Delete the file
+	if err := os.Remove(filePath); err != nil {
+		return fmt.Errorf("failed to delete file: %w", err)
 	}
-	return CurrentTotalFileSize
+
+	slog.Info("File deleted successfully", "filename", fileName)
+	return nil
 }
 
-func GetCurrentTotalFileSize() int64 {
-	i := GetStoredFilesFolder()
-	return calculateTotalFileSize(i)
-}
-
-func GetFileList(maxKeepTimeDbJsonList *FileTotalKeepTime) []FileData {
-	var FileList []FileData
-	i := GetStoredFilesFolder()
-	for _, fi := range i {
-		FileSurplusKeepTime := (*maxKeepTimeDbJsonList)[fi.Name()] - time.Now().Sub(fi.ModTime())
-		fdt := FileData{fi.Name(), fi.Size(), int64(FileSurplusKeepTime / time.Second)}
-		FileList = append(FileList, fdt)
-	}
-	return FileList
-}
-
-func TotalKeepTimeCalc(FileSizeBytes int64, CurrentTotalFileSizeBytes int64, MaxSpaceUsageBytes int64) time.Duration {
-	var totalDays float64
-	totalDays = (float64(MaxSpaceUsageBytes) - float64(CurrentTotalFileSizeBytes)) / float64(FileSizeBytes)
-	return time.Duration(totalDays * 24 * float64(time.Hour))
-}
-
-func ReadMaxSpaceUsage() int64 {
-	fileContent, _ := ioutil.ReadFile("maxSpaceUsage")
-	maxSpaceUsageString := string(fileContent)
-	maxSpaceUsage, _ := strconv.Atoi(strings.TrimSpace(maxSpaceUsageString))
-	return int64(maxSpaceUsage)
-}
-
-func ReadKeepTimeDB() FileTotalKeepTime {
-	maxKeepTimeDbJsonData, err := ioutil.ReadFile("filesMaxKeepTime.json")
+// GetFileList returns a list of all files in the storage directory
+func GetFileList(fileStorePath string) ([]FileInfo, error) {
+	entries, err := os.ReadDir(fileStorePath)
 	if err != nil {
-		log.Fatalf("cannot load json data filesMaxKeepTime.json. %s", err.Error())
+		if os.IsNotExist(err) {
+			return []FileInfo{}, nil // Return empty list if directory doesn't exist
+		}
+		return nil, fmt.Errorf("failed to read file directory: %w", err)
 	}
-	var maxKeepTimeDb FileTotalKeepTime
-	err = json.Unmarshal(maxKeepTimeDbJsonData, &maxKeepTimeDb)
-	if err != nil {
-		log.Fatalf("cannot parse json data. %s", err.Error())
+
+	var files []FileInfo
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			info, err := entry.Info()
+			if err != nil {
+				slog.Warn("Failed to get file info", "name", entry.Name(), "error", err)
+				continue
+			}
+
+			files = append(files, FileInfo{
+				FileName:         entry.Name(),
+				FileCreationTime: info.ModTime().Unix(),
+				FileSizeBytes:    info.Size(),
+			})
+		}
 	}
-	return maxKeepTimeDb
+
+	return files, nil
 }
 
-func WriteKeepTimeDB(FileTotalKeepTimeData *FileTotalKeepTime) {
-	FileTotalKeepTimeBytes, _ := json.Marshal(FileTotalKeepTimeData)
-	err := ioutil.WriteFile("filesMaxKeepTime.json", FileTotalKeepTimeBytes, 0755)
+// GetCurrentTotalFileSize returns the total size of all files in storage
+func GetCurrentTotalFileSize(fileStorePath string) int64 {
+	entries, err := os.ReadDir(fileStorePath)
 	if err != nil {
-		log.Fatalf("cannot write file! %s", err.Error())
+		if os.IsNotExist(err) {
+			return 0
+		}
+		slog.Warn("Failed to read file directory", "path", fileStorePath, "error", err)
+		return 0
 	}
+
+	var totalSize int64
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			info, err := entry.Info()
+			if err != nil {
+				slog.Warn("Failed to get file info", "name", entry.Name(), "error", err)
+				continue
+			}
+			totalSize += info.Size()
+		}
+	}
+
+	return totalSize
+}
+
+// GetAvailableSpace returns the available storage space in bytes
+func GetAvailableSpace(maxStorageSize int64, fileStorePath string) int64 {
+	currentSize := GetCurrentTotalFileSize(fileStorePath)
+	available := maxStorageSize - currentSize
+	if available < 0 {
+		return 0
+	}
+	return available
 }

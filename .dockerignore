@@ -1,0 +1,17 @@
+.git
+.gitignore
+.idea
+.vscode
+*.md
+*.exe
+vendor/
+files/
+temp/
+little-share-conf.json
+Makefile
+DEVELOPMENT.md
+QUICKSTART.md
+*.log
+coverage.out
+coverage.html
+.DS_Store

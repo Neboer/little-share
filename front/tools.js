@@ -88,12 +88,12 @@ function refresh_upload_files_table(files, server_max_size, files_table) {
 function refill_server_files_list(server_files_json, server_files_table, deleteCallBack) {
     server_files_table.find("tr").remove();
     for (let single_file_info of server_files_json) {
-        let line = "<tr><td>" + single_file_info["FileName"] + "</td><td>" + bytes_to_readable_string(single_file_info["FileSizeBytes"]) + "</td><td>"
-            + seconds_to_readable(single_file_info["FileSurplusKeepSeconds"]) + "</td></tr>";
-        let download_label = $("<a class='btn btn-outline-primary' style='margin-right: 10px'>下载</a>").prop('href', '/files/' + single_file_info["FileName"]);
+        let line = "<tr><td>" + single_file_info["name"] + "</td><td>" + bytes_to_readable_string(single_file_info["size"]) + "</td><td>"
+            + "永久" + "</td></tr>";
+        let download_label = $("<a class='btn btn-outline-primary' style='margin-right: 10px'>下载</a>").prop('href', '/files/' + single_file_info["name"]);
         let delete_label = $("<a class='btn btn-outline-danger' style='margin-left: 10px'>删除</a>").prop('href', 'javascript:void(0)');
         delete_label.click(() => {
-            axios.delete('files/' + single_file_info["FileName"]).then(() => {
+            axios.delete('files/' + single_file_info["name"]).then(() => {
                 alert("删除成功");
             }, () => {
                 alert("删除失败！");
